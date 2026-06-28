@@ -51,7 +51,7 @@
 :root {
   --background: #fdfbf7;
   --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
+  --card: #F5F3F2;
   --card-foreground: oklch(0.145 0 0);
   --popover: #ffffff;
   --popover-foreground: oklch(0.145 0 0);
@@ -72,7 +72,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 1rem;
+  --radius: 0px;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -125,10 +125,13 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    font-family: var(--font-nunito), sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--font-lora), serif;
   }
 }
 
-@utility shadow-friendly {
-  box-shadow: 0 12px 32px rgba(172, 68, 37, 0.08);
+@utility shadow-sally {
+  box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.1);
 }
