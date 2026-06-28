@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const data = await request.json();
     
     // Create reservation in Odoo
-    const reservationVals: any = {
+    const reservationVals: Record<string, unknown> = {
       customer_name: data.customer_name,
       customer_phone: data.customer_phone,
       customer_email: data.customer_email,
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     if (data.reservation_line_ids && data.reservation_line_ids.length > 0) {
-      reservationVals.reservation_line_ids = data.reservation_line_ids.map((line: any) => [
+      reservationVals.reservation_line_ids = data.reservation_line_ids.map((line: { product_id: number; quantity: number }) => [
         0, 0, {
           product_id: line.product_id,
           quantity: line.quantity,

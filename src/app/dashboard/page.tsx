@@ -33,7 +33,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto py-10 px-4 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">My Reservations</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-2">View and manage your past and upcoming reservations.</p>
       </div>
 

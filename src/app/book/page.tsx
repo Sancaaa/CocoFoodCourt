@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 
@@ -20,6 +20,7 @@ export default function BookPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [timeStart, setTimeStart] = useState<number | null>(null);
@@ -33,14 +34,79 @@ export default function BookPage() {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [tables, setTables] = useState<any[]>([]);
-  const [menu, setMenu] = useState<any[]>([]);
+  interface Table {
+    id: number;
+    name: string;
+    floor_name: string;
+    seats: number;
+  }
+
+  interface MenuItem {
+    id: number;
+    name: string;
+    list_price: number;
+  }
+
+  const [tables, setTables] = useState<Table[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
 
   useEffect(() => {
+    // 1. Fetch menu
     fetch("/api/menu")
       .then(res => res.json())
       .then(data => setMenu(data))
       .catch(console.error);
+
+    // 2. Check session
+    fetch("/api/auth/session")
+      .then(res => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then(data => {
+        if (data && data.user) {
+          setIsLoggedIn(true);
+          setName(data.user.name || "");
+          setEmail(data.user.email || "");
+        } else {
+          // Check local storage fallback
+          const localLoggedIn = localStorage.getItem("userLoggedIn") === "true";
+          setIsLoggedIn(localLoggedIn);
+        }
+      })
+      .catch(console.error);
+
+    // 3. Restore state if redirecting back from registration
+    const saved = localStorage.getItem("booking_state");
+    if (saved) {
+      setTimeout(() => {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.date) setDate(parsed.date);
+          if (parsed.timeStart !== undefined) setTimeStart(parsed.timeStart);
+          if (parsed.timeEnd !== undefined) setTimeEnd(parsed.timeEnd);
+          if (parsed.guests !== undefined) setGuests(parsed.guests);
+          if (parsed.selectedTables !== undefined) setSelectedTables(parsed.selectedTables);
+          if (parsed.preorders !== undefined) setPreorders(parsed.preorders);
+          if (parsed.name) setName(parsed.name);
+          if (parsed.phone) setPhone(parsed.phone);
+          if (parsed.email) setEmail(parsed.email);
+          if (parsed.notes) setNotes(parsed.notes);
+          if (parsed.step) setStep(parsed.step);
+
+          if (parsed.date && parsed.timeStart !== null && parsed.timeEnd !== null) {
+            fetch(`/api/tables?date=${parsed.date}&time_start=${parsed.timeStart}&time_end=${parsed.timeEnd}`)
+              .then(res => res.json())
+              .then(data => setTables(data))
+              .catch(console.error);
+          }
+        } catch (e) {
+          console.error("Error restoring booking state:", e);
+        } finally {
+          localStorage.removeItem("booking_state");
+        }
+      }, 0);
+    }
   }, []);
 
   const handleFetchTables = async () => {
@@ -76,6 +142,26 @@ export default function BookPage() {
   };
 
   const handleSubmit = async () => {
+    // If not logged in, prompt to register
+    if (!isLoggedIn) {
+      const stateToSave = {
+        date,
+        timeStart,
+        timeEnd,
+        guests,
+        selectedTables,
+        preorders,
+        name,
+        phone,
+        email,
+        notes,
+        step: 4
+      };
+      localStorage.setItem("booking_state", JSON.stringify(stateToSave));
+      router.push("/register?redirect=/book");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/reservations", {
@@ -90,12 +176,15 @@ export default function BookPage() {
           time_end: timeEnd,
           guest_count: guests,
           table_ids: selectedTables,
-          reservation_line_ids: preorders,
+          reservation_line_ids: preorders.map(p => ({
+            product_id: p.product_id,
+            quantity: p.quantity
+          })),
           notes: notes,
         })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         if (data.paymentUrl) {
           router.push(data.paymentUrl);
         } else {
@@ -110,6 +199,14 @@ export default function BookPage() {
   };
 
   const getPreorderQty = (id: number) => preorders.find(p => p.product_id === id)?.quantity || 0;
+
+  // Calculate preorders total price
+  const calculateTotal = () => {
+    return preorders.reduce((total, p) => {
+      const item = menu.find(m => m.id === p.product_id);
+      return total + (item ? item.list_price * p.quantity : 0);
+    }, 0);
+  };
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-4xl bg-white min-h-screen">
@@ -203,38 +300,50 @@ export default function BookPage() {
         )}
 
         {step === 3 && (
-          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {menu.map(item => (
-              <div key={item.id} className="bg-[#F5F3F2] flex flex-col group relative overflow-hidden">
-                <div className="relative w-full aspect-[2/3] bg-muted overflow-hidden">
-                  <Image src="/food.png" alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">Available</span>
-                  <h4 className="font-serif font-bold text-lg leading-snug mb-1 group-hover:text-primary transition-colors">{item.name}</h4>
-                  <p className="text-foreground/70 text-sm mb-4 flex-1">Rp {item.list_price.toLocaleString()}</p>
-                  
-                  <div className="flex items-center justify-between border-t border-muted/50 pt-4 mt-auto">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, -1)}>-</Button>
-                    <span className="font-bold text-lg">{getPreorderQty(item.id)}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, 1)}>+</Button>
+          <div className="space-y-6">
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {menu.map(item => (
+                <div key={item.id} className="bg-[#F5F3F2] flex flex-col group relative overflow-hidden">
+                  <div className="relative w-full aspect-[2/3] bg-muted overflow-hidden">
+                    <Image src="/food.png" alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                  </div>
+                  <div className="p-5 flex flex-col flex-1">
+                    <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">Available</span>
+                    <h4 className="font-serif font-bold text-lg leading-snug mb-1 group-hover:text-primary transition-colors">{item.name}</h4>
+                    <p className="text-foreground/70 text-sm mb-4 flex-1">Rp {item.list_price.toLocaleString()}</p>
+                    
+                    <div className="flex items-center justify-between border-t border-muted/50 pt-4 mt-auto">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, -1)}>-</Button>
+                      <span className="font-bold text-lg">{getPreorderQty(item.id)}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, 1)}>+</Button>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            {preorders.length > 0 && (
+              <div className="p-4 bg-primary/5 text-primary text-right font-bold text-lg border border-primary/10">
+                Total Price: Rp <span id="preorder-total">{calculateTotal().toLocaleString()}</span>
               </div>
-            ))}
+            )}
           </div>
         )}
 
         {step === 4 && (
           <div className="max-w-xl mx-auto space-y-8 bg-[#F5F3F2] p-8 md:p-12">
+            {!isLoggedIn && (
+              <div className="p-4 bg-amber-500/10 text-amber-800 text-sm rounded-xl font-medium border border-amber-500/20" id="guest-booking-notice">
+                You are currently booking as a guest. Click &quot;Confirm Reservation&quot; below to quickly register/log in and save this booking to your account history.
+              </div>
+            )}
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-3">
                 <Label htmlFor="name" className="text-[13px] uppercase tracking-wide font-bold">Full Name</Label>
-                <Input id="name" value={name} onChange={e => setName(e.target.value)} className="h-12 rounded-none border-0 bg-white" />
+                <Input id="name" value={name} onChange={e => setName(e.target.value)} className="h-12 rounded-none border-0 bg-white" required={isLoggedIn} />
               </div>
               <div className="space-y-3">
                 <Label htmlFor="phone" className="text-[13px] uppercase tracking-wide font-bold">Phone Number</Label>
-                <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="h-12 rounded-none border-0 bg-white" />
+                <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="h-12 rounded-none border-0 bg-white" required={isLoggedIn} />
               </div>
             </div>
             <div className="space-y-3">
@@ -272,7 +381,7 @@ export default function BookPage() {
           </Button>
         )}
         {step === 4 && (
-          <Button onClick={handleSubmit} disabled={!name || !phone || loading} className="rounded-none px-8 h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold uppercase tracking-wide">
+          <Button onClick={handleSubmit} disabled={loading || (isLoggedIn && (!name || !phone))} className="rounded-none px-8 h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold uppercase tracking-wide">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {preorders.length > 0 ? "Proceed to Payment" : "Confirm Reservation"}
           </Button>

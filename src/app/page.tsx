@@ -64,7 +64,7 @@ export default function Home() {
               <CheckCircle2 className="h-8 w-8 text-primary mb-6" />
               <h4 className="text-xl font-bold mb-3 font-serif group-hover:text-primary transition-colors">2. Reserve a Table</h4>
               <p className="text-foreground/70 leading-relaxed">
-                Select your preferred seating area. Whether it's a cozy corner or a large family table, it's yours.
+                Select your preferred seating area. Whether it&apos;s a cozy corner or a large family table, it&apos;s yours.
               </p>
             </div>
             {/* Card 3 */}

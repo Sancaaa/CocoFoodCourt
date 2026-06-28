@@ -24,29 +24,63 @@ export class OdooClient {
   private isMock: boolean;
 
   constructor() {
-    this.url = process.env.ODOO_URL || 'http://localhost:8069';
-    this.db = process.env.ODOO_DB || 'odoo';
-    this.username = process.env.ODOO_USERNAME || 'admin';
-    this.apiKey = process.env.ODOO_API_KEY || 'admin';
-    this.isMock = true; // forced to true for now as per user request
+    this.url = process.env.ODOO_URL || '';
+    this.db = process.env.ODOO_DB || '';
+    this.username = process.env.ODOO_USERNAME || '';
+    this.apiKey = process.env.ODOO_API_KEY || '';
+
+    if (process.env.USE_MOCK_ODOO !== undefined) {
+      this.isMock = process.env.USE_MOCK_ODOO === 'true';
+    } else {
+      this.isMock = process.env.NODE_ENV !== 'production';
+    }
   }
 
-  async authenticate(): Promise<number> {
+  private validateConfig(): void {
+    if (this.isMock) return;
+
+    const missing: string[] = [];
+    if (!this.url) missing.push('ODOO_URL');
+    if (!this.db) missing.push('ODOO_DB');
+    if (!this.username) missing.push('ODOO_USERNAME');
+    if (!this.apiKey) missing.push('ODOO_API_KEY');
+
+    if (missing.length > 0) {
+      throw new Error(`Missing required Odoo environment variables: ${missing.join(', ')}`);
+    }
+  }
+
+  async authenticate(username?: string, password?: string): Promise<number> {
     if (this.isMock) return 1;
+
+    const isCustom = username !== undefined || password !== undefined;
+    const authUsername = username !== undefined ? username : this.username;
+    const authPassword = password !== undefined ? password : this.apiKey;
+    const storeUid = !isCustom;
 
     return new Promise((resolve, reject) => {
       const client = xmlrpc.createClient({ url: `${this.url}/xmlrpc/2/common` });
-      client.methodCall('authenticate', [this.db, this.username, this.apiKey, {}], (error, value) => {
-        if (error) reject(error);
-        else {
-          this.uid = value;
-          resolve(value);
+      client.methodCall('authenticate', [this.db, authUsername, authPassword, {}], (error, value) => {
+        if (error) {
+          reject(error);
+        } else {
+          if (value === false || typeof value !== 'number') {
+            reject(new Error('Authentication failed: Invalid credentials or unexpected response from Odoo'));
+          } else {
+            if (storeUid) {
+              this.uid = value;
+            }
+            resolve(value);
+          }
         }
       });
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async executeKw(model: string, method: string, args: any[], kwargs: any = {}): Promise<any> {
+    this.validateConfig();
+
     if (this.isMock) {
       console.log(`[Mock Odoo] Executing ${model}.${method} with args:`, args);
       

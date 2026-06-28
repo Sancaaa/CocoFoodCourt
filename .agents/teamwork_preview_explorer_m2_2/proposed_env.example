@@ -1,0 +1,9 @@
+# Odoo Client Configuration
+ODOO_URL=http://localhost:8069
+ODOO_DB=odoo
+ODOO_USERNAME=admin
+ODOO_API_KEY=admin
+
+# Toggle Mock mode (forces mock mode if 'true')
+# If not specified, defaults to true in development/test, and false in production
+USE_MOCK_ODOO=true

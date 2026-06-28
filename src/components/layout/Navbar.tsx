@@ -9,13 +9,37 @@ import { useRouter } from 'next/navigation';
 export function Navbar() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
+  const checkLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.user) {
+          setIsLoggedIn(true);
+          setUserName(data.user.name);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Navbar session check error:', e);
+    }
+    // Fallback to local storage
+    const localLoggedIn = localStorage.getItem("userLoggedIn") === "true";
+    setIsLoggedIn(localLoggedIn);
+    if (!localLoggedIn) {
+      setUserName('');
+    } else {
+      setUserName('User');
+    }
+  };
+
   useEffect(() => {
-    const checkLogin = () => {
-      setIsLoggedIn(localStorage.getItem("userLoggedIn") === "true");
-    };
-    checkLogin();
+    setTimeout(() => {
+      checkLogin();
+    }, 0);
     window.addEventListener("storage", checkLogin);
     
     const handleScroll = () => {
@@ -29,9 +53,16 @@ export function Navbar() {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout request error:', e);
+    }
     localStorage.removeItem("userLoggedIn");
     setIsLoggedIn(false);
+    setUserName('');
+    window.dispatchEvent(new Event("storage"));
     router.push("/");
   };
 
@@ -51,6 +82,11 @@ export function Navbar() {
           
           {isLoggedIn ? (
             <>
+              {userName && (
+                <span className="text-[13px] font-bold text-foreground/80" id="navbar-user-name">
+                  Hi, {userName}
+                </span>
+              )}
               <Link href="/dashboard" className="text-[13px] uppercase tracking-wide font-bold hover:text-primary transition-colors">
                 My History
               </Link>
