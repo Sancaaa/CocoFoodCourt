@@ -1,28 +1,35 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { odooClient } from '@/lib/odoo-client';
 
-export default function Dashboard() {
-  // Mock data representing a user's past reservations fetched from Odoo
-  const reservations = [
-    {
-      id: 1,
-      name: "RES/2026/00123",
-      reservation_date: "2026-06-30",
-      time_start: 18.0,
-      time_end: 20.0,
-      state: "confirmed",
-      amount_total: 68000,
-    },
-    {
-      id: 2,
-      name: "RES/2026/00089",
-      reservation_date: "2026-06-15",
-      time_start: 12.0,
-      time_end: 14.0,
-      state: "completed",
-      amount_total: 125000,
+export default async function Dashboard() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('session');
+  
+  if (!sessionCookie || !sessionCookie.value) {
+    redirect('/login');
+  }
+  
+  const session = JSON.parse(sessionCookie.value);
+  
+  let reservations: any[] = [];
+  if (session.partnerId) {
+    try {
+      reservations = await odooClient.executeKw(
+        'foodcourt.reservation',
+        'search_read',
+        [[['customer_id', '=', session.partnerId]]],
+        {
+          fields: ['id', 'name', 'reservation_date', 'time_start', 'time_end', 'state', 'amount_total'],
+          order: 'reservation_date desc'
+        }
+      );
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
     }
-  ];
+  }
 
   const formatTime = (timeFloat: number) => {
     const hours = Math.floor(timeFloat);

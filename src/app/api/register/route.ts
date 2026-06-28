@@ -34,16 +34,25 @@ export async function POST(request: Request) {
 
     const portalGroupId = groupIds && groupIds.length > 0 ? groupIds[0] : 10; // default 10 if not found
 
-    // 2. Create the user under res.users and link to Portal group
-    const userId = await odooClient.executeKw('res.users', 'create', [
-      {
+    // 2. Create the user under res.users (without groups_id to avoid Invalid field error)
+    // In Odoo 19, create expects a list of dicts.
+    const userIds = await odooClient.executeKw('res.users', 'create', [
+      [{
         name,
         login: email,
         email,
         password,
-        groups_id: [[6, 0, [portalGroupId]]]
-      }
+      }]
     ]);
+    const userId = Array.isArray(userIds) ? userIds[0] : userIds;
+
+    // 3. Add the user to the Portal group by writing to res.groups
+    if (userId && portalGroupId) {
+      await odooClient.executeKw('res.groups', 'write', [
+        [portalGroupId],
+        { users: [[4, userId, 0]] }
+      ]);
+    }
 
     return NextResponse.json({ success: true, userId }, { status: 201 });
   } catch (error) {

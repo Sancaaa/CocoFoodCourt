@@ -1,9 +1,12 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { odooClient } from '@/lib/odoo-client';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
     
     // Create reservation in Odoo
     const reservationVals: Record<string, unknown> = {
@@ -18,7 +21,12 @@ export async function POST(request: Request) {
       notes: data.notes || '',
     };
 
-    if (data.customer_id) {
+    if (sessionCookie && sessionCookie.value) {
+      const session = JSON.parse(sessionCookie.value);
+      if (session.partnerId) {
+        reservationVals.customer_id = session.partnerId;
+      }
+    } else if (data.customer_id) {
       reservationVals.customer_id = data.customer_id;
     }
 
@@ -31,11 +39,13 @@ export async function POST(request: Request) {
       ]);
     }
 
-    const reservationId = await odooClient.executeKw(
+    // In Odoo 19, create expects a list of dicts
+    const reservationIds = await odooClient.executeKw(
       'foodcourt.reservation',
       'create',
-      [reservationVals]
+      [[reservationVals]]
     );
+    const reservationId = Array.isArray(reservationIds) ? reservationIds[0] : reservationIds;
 
     if (data.reservation_line_ids && data.reservation_line_ids.length > 0) {
       // Mock Headless Payment Gateway Integration

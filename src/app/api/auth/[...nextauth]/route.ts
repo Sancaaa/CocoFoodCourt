@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
 
-      // Fetch user details (name, login, email)
+      // Fetch user details (name, login, email, partner_id)
       const userRecords = await odooClient.executeKw('res.users', 'read', [[uid]], {
-        fields: ['name', 'login', 'email']
+        fields: ['name', 'login', 'email', 'partner_id']
       });
 
       if (!userRecords || userRecords.length === 0) {
@@ -52,8 +52,11 @@ export async function POST(request: NextRequest) {
       }
 
       const user = userRecords[0];
+      const partnerId = user.partner_id && user.partner_id.length > 0 ? user.partner_id[0] : null;
+      
       const sessionData = {
         id: uid,
+        partnerId,
         name: user.name || 'User',
         email: user.login || email
       };
