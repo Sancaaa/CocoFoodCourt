@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       await odooClient.executeKw('foodcourt.reservation', 'write', [
         [parseInt(orderId)],
         {
-          is_paid_online: true,
           payment_reference: data.transaction_id || 'MOCK_TXN_ID'
         }
       ]);
