@@ -16,18 +16,14 @@ export async function POST(request: Request) {
     }
 
     if (transactionStatus === 'settlement' || transactionStatus === 'capture' || transactionStatus === 'success') {
-      // 1. Update Odoo reservation: is_paid_online = True and set reference
+      // 1. Update Odoo reservation state and payment details
       await odooClient.executeKw('foodcourt.reservation', 'write', [
         [parseInt(orderId)],
         {
+          state: 'confirmed',
+          is_paid_online: true,
           payment_reference: data.transaction_id || 'MOCK_TXN_ID'
         }
-      ]);
-
-      // 2. Confirm the reservation in Odoo
-      // This will trigger action_confirm -> changes table state to Reserved
-      await odooClient.executeKw('foodcourt.reservation', 'action_confirm', [
-        [parseInt(orderId)]
       ]);
 
       return NextResponse.json({ success: true, message: 'Reservation confirmed successfully via payment webhook' });
