@@ -42,13 +42,13 @@ export async function GET(request: Request) {
       'restaurant.table',
       'search_read',
       [domain],
-      { fields: ['id', 'name', 'floor_id', 'seats'] }
+      { fields: ['id', 'table_number', 'floor_id', 'seats'] }
     );
 
     // 5. Format to match frontend expectations
     const tables = rawTables.map((t: any) => ({
       id: t.id,
-      name: t.name,
+      name: t.table_number,
       seats: t.seats,
       floor_name: t.floor_id && t.floor_id.length > 1 ? t.floor_id[1] : 'Unknown Floor'
     }));
