@@ -65,6 +65,14 @@ export class OdooClient {
       if (model === 'res.partner' && method === 'create') {
         return Math.floor(Math.random() * 1000) + 1; // Return mock partner ID
       }
+      if (model === 'foodcourt.reservation' && method === 'action_confirm') {
+        console.log(`[Mock Odoo] Confirmed reservation IDs:`, args[0]);
+        return true;
+      }
+      if (model === 'foodcourt.reservation' && method === 'write') {
+        console.log(`[Mock Odoo] Updated reservation IDs:`, args[0], `with vals:`, args[1]);
+        return true;
+      }
       return [];
     }
 

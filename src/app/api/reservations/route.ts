@@ -37,7 +37,18 @@ export async function POST(request: Request) {
       [reservationVals]
     );
 
-    return NextResponse.json({ success: true, reservationId });
+    if (data.reservation_line_ids && data.reservation_line_ids.length > 0) {
+      // Mock Headless Payment Gateway Integration
+      // Return a mock payment URL for the user to complete payment
+      const mockPaymentUrl = `/payment-mock?order_id=${reservationId}`;
+      return NextResponse.json({ success: true, reservationId, paymentUrl: mockPaymentUrl });
+    } else {
+      // No food ordered, auto confirm reservation since no payment is needed
+      await odooClient.executeKw('foodcourt.reservation', 'action_confirm', [
+        [reservationId]
+      ]);
+      return NextResponse.json({ success: true, reservationId });
+    }
   } catch (error) {
     console.error('Error creating reservation:', error);
     return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
