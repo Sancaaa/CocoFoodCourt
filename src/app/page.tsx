@@ -12,7 +12,7 @@ export default function Home() {
           <div className="flex flex-col items-start space-y-6">
             <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground leading-tight">
               Savor the Moment at <br />
-              <span className="text-primary italic">Coco FoodCourt</span>
+              <span className="text-primary italic">Coco Foodcourt</span>
             </h1>
             <p className="text-lg text-foreground/80 max-w-lg leading-relaxed">
               Reserve your table and pre-order your favorite meals. Skip the
