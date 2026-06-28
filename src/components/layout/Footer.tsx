@@ -4,7 +4,7 @@ export function Footer() {
       <div className="container mx-auto px-4 text-center text-muted-foreground">
         <p>
           &copy; {new Date().getFullYear()} CocoFoodCourt. cocomelon tomato
-          muthe cantik banget
+          muthe cantik
         </p>
       </div>
     </footer>
