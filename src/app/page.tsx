@@ -85,7 +85,7 @@ export default function Home() {
             <div className="bg-[#F5F3F2] p-8 flex flex-col group hover:bg-primary/5 transition-colors duration-300">
               <Utensils className="h-8 w-8 text-primary mb-6" />
               <h4 className="text-xl font-bold mb-3 font-serif group-hover:text-primary transition-colors">
-                3. Pre-Order (Optional)
+                3. Pre-Order
               </h4>
               <p className="text-foreground/70 leading-relaxed">
                 Browse our tenant menus and order ahead. Your food will be
