@@ -45,33 +45,39 @@ export default async function Dashboard() {
       </div>
 
       <div className="grid gap-4">
-        {reservations.map((res) => (
-          <Card key={res.id} className="overflow-hidden">
-            <CardHeader className="bg-muted/50 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">{res.name}</CardTitle>
-                  <CardDescription>{res.reservation_date}</CardDescription>
+        {reservations.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">You have no reservations yet.</p>
+          </div>
+        ) : (
+          reservations.map((res) => (
+            <Card key={res.id} className="overflow-hidden">
+              <CardHeader className="bg-muted/50 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{res.name}</CardTitle>
+                    <CardDescription>{res.reservation_date}</CardDescription>
+                  </div>
+                  <Badge variant={res.state === 'confirmed' ? 'default' : 'secondary'} className={res.state === 'confirmed' ? 'bg-primary' : ''}>
+                    {res.state.toUpperCase()}
+                  </Badge>
                 </div>
-                <Badge variant={res.state === 'confirmed' ? 'default' : 'secondary'} className={res.state === 'confirmed' ? 'bg-primary' : ''}>
-                  {res.state.toUpperCase()}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between text-sm">
-                <div className="space-y-1">
-                  <p className="font-medium">Time Slot</p>
-                  <p className="text-muted-foreground">{formatTime(res.time_start)} - {formatTime(res.time_end)}</p>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="space-y-1">
+                    <p className="font-medium">Time Slot</p>
+                    <p className="text-muted-foreground">{formatTime(res.time_start)} - {formatTime(res.time_end)}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="font-medium">Total Pre-order</p>
+                    <p className="text-muted-foreground">Rp {res.amount_total.toLocaleString()}</p>
+                  </div>
                 </div>
-                <div className="space-y-1 text-right">
-                  <p className="font-medium">Total Pre-order</p>
-                  <p className="text-muted-foreground">Rp {res.amount_total.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

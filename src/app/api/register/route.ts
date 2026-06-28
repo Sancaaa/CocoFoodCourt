@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     if (userId && portalGroupId) {
       await odooClient.executeKw('res.groups', 'write', [
         [portalGroupId],
-        { users: [[4, userId, 0]] }
+        { users_ids: [[4, userId, 0]] }
       ]);
     }
 
