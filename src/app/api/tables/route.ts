@@ -12,6 +12,7 @@ interface RawOdooTable {
   table_number: string;
   floor_id: [number, string] | false;
   seats: number;
+  state?: string;
   position_h?: number;
   position_v?: number;
   width?: number;
@@ -53,34 +54,36 @@ export async function GET(request: Request) {
     const reservedTableIds = (overlapping as { table_ids?: number[] }[])
       .flatMap((res) => res.table_ids || []);
 
-    // 3. Build domain for available tables (bookable floor only)
+    const reservedSet = new Set(reservedTableIds);
+
+    // 3. Fetch ALL active tables on the bookable floor (not just free ones), so
+    //    the map can still show occupied/reserved tables in a different colour.
     type DomainLeaf = [string, string, unknown];
     const domain: DomainLeaf[] = [
-      ['state', '=', 'available'],
       ['active', '=', true],
       ['floor_id.name', '=', BOOKABLE_FLOOR]
     ];
-    if (reservedTableIds.length > 0) {
-      domain.push(['id', 'not in', reservedTableIds]);
-    }
 
-    // 4. Fetch available tables, including the POS floor-plan layout fields
-    //    so the frontend can draw a real map instead of a plain grid.
+    // 4. Include the POS floor-plan layout fields + `state` so the frontend can
+    //    draw a real map and mark which tables are bookable.
     const rawTables: RawOdooTable[] = await odooClient.executeKw(
       'restaurant.table',
       'search_read',
       [domain],
-      { fields: ['id', 'table_number', 'floor_id', 'seats', 'position_h', 'position_v', 'width', 'height', 'shape'] }
+      { fields: ['id', 'table_number', 'floor_id', 'seats', 'state', 'position_h', 'position_v', 'width', 'height', 'shape'] }
     );
 
     // 5. Format to match frontend expectations. We intentionally drop Odoo's
-    //    `color` and re-style on the web for a consistent look.
+    //    `color` and re-style on the web for a consistent look. A table is
+    //    bookable only when its own state is `available` AND it isn't held by an
+    //    overlapping reservation for this slot.
     const tables = rawTables
       .map((t) => ({
         id: t.id,
         name: t.table_number,
         seats: t.seats,
         floor_name: Array.isArray(t.floor_id) && t.floor_id.length > 1 ? t.floor_id[1] : 'Unknown Floor',
+        available: (t.state ?? 'available') === 'available' && !reservedSet.has(t.id),
         position_h: t.position_h ?? 0,
         position_v: t.position_v ?? 0,
         width: t.width ?? 0,

@@ -13,7 +13,7 @@ const MOCK_TABLES = [
   { id: 4, table_number: 'A4', floor_id: [1, 'Main Floor'], seats: 6, position_h: 540, position_v: 60, width: 160, height: 100, shape: 'square', color: '', state: 'available', active: true },
   { id: 5, table_number: 'A5', floor_id: [1, 'Main Floor'], seats: 2, position_h: 740, position_v: 60, width: 90, height: 90, shape: 'round', color: '', state: 'available', active: true },
   { id: 6, table_number: 'B1', floor_id: [1, 'Main Floor'], seats: 4, position_h: 60, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 7, table_number: 'B2', floor_id: [1, 'Main Floor'], seats: 8, position_h: 300, position_v: 240, width: 180, height: 120, shape: 'round', color: '', state: 'available', active: true },
+  { id: 7, table_number: 'B2', floor_id: [1, 'Main Floor'], seats: 8, position_h: 300, position_v: 240, width: 180, height: 120, shape: 'round', color: '', state: 'reserved', active: true },
   { id: 8, table_number: 'B3', floor_id: [1, 'Main Floor'], seats: 4, position_h: 560, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
   { id: 9, table_number: 'C1', floor_id: [1, 'Main Floor'], seats: 4, position_h: 60, position_v: 430, width: 100, height: 100, shape: 'round', color: '', state: 'available', active: true },
   { id: 10, table_number: 'C2', floor_id: [1, 'Main Floor'], seats: 2, position_h: 220, position_v: 430, width: 90, height: 90, shape: 'square', color: '', state: 'available', active: true },

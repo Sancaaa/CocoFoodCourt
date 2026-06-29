@@ -132,6 +132,8 @@ export default function BookPage() {
   };
 
   const handleToggleTable = (id: number) => {
+    // Guard: never let an unavailable table enter the selection.
+    if (!tables.find(t => t.id === id)?.available) return;
     setSelectedTables(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
   };
 
@@ -313,6 +315,7 @@ export default function BookPage() {
                   <div className="flex items-center gap-4 text-[13px] font-medium text-foreground/70">
                     <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-primary/10 border border-primary" /> Available</span>
                     <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-primary" /> Selected</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-[#9aa0a6]/35 border border-dashed border-[#9aa0a6]" /> Unavailable</span>
                   </div>
                 </div>
 
@@ -321,8 +324,10 @@ export default function BookPage() {
                 </div>
 
                 {/* Selection summary + capacity feedback */}
-                {selectedTables.length === 0 ? (
-                  <p className="text-sm text-foreground/60 text-center">Tap a table on the map to select it. You can pick more than one for larger groups.</p>
+                {tables.every(t => !t.available) ? (
+                  <p className="text-sm text-amber-800 text-center bg-amber-500/10 border border-amber-500/20 p-3">All tables are booked for this time slot. Try a different time.</p>
+                ) : selectedTables.length === 0 ? (
+                  <p className="text-sm text-foreground/60 text-center">Tap an available table on the map to select it. You can pick more than one for larger groups.</p>
                 ) : (
                   <div className={`p-4 text-sm font-medium border ${enoughSeats ? "bg-primary/5 text-foreground border-primary/10" : "bg-amber-500/10 text-amber-800 border-amber-500/20"}`}>
                     <span className="font-bold">{selectedTableObjs.map(t => t.name).join(", ")}</span>
