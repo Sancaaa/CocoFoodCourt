@@ -32,15 +32,26 @@ interface LeafletFloorMapProps {
 
 const PRIMARY = "#ac4425";
 
-// Available tables get a light tint so the Odoo floor image shows through;
-// the selected table is filled solid for an unmistakable highlight.
-const selectedStyle: L.PathOptions = { color: PRIMARY, weight: 3, fillColor: PRIMARY, fillOpacity: 0.85 };
-const availableStyle: L.PathOptions = { color: PRIMARY, weight: 2, fillColor: PRIMARY, fillOpacity: 0.12 };
+// Both states use a translucent fill so the Odoo floor image stays visible;
+// the selected table is just more saturated.
+const selectedStyle: L.PathOptions = { color: PRIMARY, weight: 3, fillColor: PRIMARY, fillOpacity: 0.55 };
+const availableStyle: L.PathOptions = { color: PRIMARY, weight: 2, fillColor: PRIMARY, fillOpacity: 0.15 };
+
+// Centered table-number label; its color flips with the selection state.
+function labelIcon(name: string | number, selected: boolean) {
+  return L.divIcon({
+    className: "table-label",
+    html: `<span style="color:${selected ? "#ffffff" : PRIMARY}">${name}</span>`,
+    iconSize: [34, 20],
+    iconAnchor: [17, 10],
+  });
+}
 
 export default function LeafletFloorMap({ tables, selectedTables, onToggle, floor }: LeafletFloorMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layersRef = useRef<Map<number, L.Path>>(new Map());
+  const labelsRef = useRef<Map<number, L.Marker>>(new Map());
   const onToggleRef = useRef(onToggle);
 
   // Keep the click handler current without rebuilding the map layers.
@@ -89,14 +100,14 @@ export default function LeafletFloorMap({ tables, selectedTables, onToggle, floo
     }
 
     layersRef.current = new Map();
+    labelsRef.current = new Map();
     for (const t of tables) {
       const w = t.width || 50;
       const h = t.height || 50;
+      const center = pt(t.position_h + w / 2, t.position_v + h / 2);
       let layer: L.Path;
       if (t.shape === "round") {
-        const cx = t.position_h + w / 2;
-        const cy = t.position_v + h / 2;
-        layer = L.circle(pt(cx, cy), { radius: Math.max(w, h) / 2, ...availableStyle });
+        layer = L.circle(center, { radius: Math.max(w, h) / 2, ...availableStyle });
       } else {
         layer = L.rectangle(L.latLngBounds(pt(t.position_h, t.position_v), pt(t.position_h + w, t.position_v + h)), availableStyle);
       }
@@ -104,6 +115,11 @@ export default function LeafletFloorMap({ tables, selectedTables, onToggle, floo
       layer.bindTooltip(`${t.name} · ${t.seats} seats`, { direction: "top" });
       layer.on("click", () => onToggleRef.current(t.id));
       layersRef.current.set(t.id, layer);
+
+      // Centered, non-interactive number label (clicks fall through to the shape).
+      const label = L.marker(center, { icon: labelIcon(t.name, false), interactive: false, keyboard: false });
+      label.addTo(map);
+      labelsRef.current.set(t.id, label);
     }
 
     // The container may not have its final size on first paint, so fit the
@@ -118,15 +134,19 @@ export default function LeafletFloorMap({ tables, selectedTables, onToggle, floo
       map.remove();
       mapRef.current = null;
       layersRef.current.clear();
+      labelsRef.current.clear();
     };
   }, [tables, floor]);
 
-  // Restyle layers when the selection changes.
+  // Restyle shapes and recolor the number labels when the selection changes.
   useEffect(() => {
+    const nameById = new Map(tables.map((t) => [t.id, t.name]));
     layersRef.current.forEach((layer, id) => {
-      layer.setStyle(selectedTables.includes(id) ? selectedStyle : availableStyle);
+      const selected = selectedTables.includes(id);
+      layer.setStyle(selected ? selectedStyle : availableStyle);
+      labelsRef.current.get(id)?.setIcon(labelIcon(nameById.get(id) ?? "", selected));
     });
-  }, [selectedTables]);
+  }, [selectedTables, tables]);
 
   return (
     <div
