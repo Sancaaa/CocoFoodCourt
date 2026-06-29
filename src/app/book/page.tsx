@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import FloorMap, { type FloorTable } from "@/components/booking/FloorMap";
+import FloorMap, { type FloorTable, type FloorMeta } from "@/components/booking/FloorMap";
 
 const timeSlots = Array.from({ length: 25 }, (_, i) => {
   const time = 10 + i * 0.5;
@@ -44,6 +44,7 @@ export default function BookPage() {
   }
 
   const [tables, setTables] = useState<FloorTable[]>([]);
+  const [floor, setFloor] = useState<FloorMeta | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
 
   useEffect(() => {
@@ -109,13 +110,19 @@ export default function BookPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/tables?date=${date}&time_start=${timeStart}&time_end=${timeEnd}`);
+      // Tables and floor map metadata load in parallel.
+      const [res, floorRes] = await Promise.all([
+        fetch(`/api/tables?date=${date}&time_start=${timeStart}&time_end=${timeEnd}`),
+        fetch(`/api/floor`),
+      ]);
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.error || "Could not load tables. Please try again.");
       }
       const data = await res.json();
+      const floorData = floorRes.ok ? await floorRes.json() : null;
       setTables(data);
+      setFloor(floorData && !floorData.error ? floorData : { image: null, width: 0, height: 0, backgroundColor: "#F5F3F2" });
       setStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load tables. Please try again.");
@@ -296,21 +303,21 @@ export default function BookPage() {
           <div className="space-y-6">
             {tables.length === 0 ? (
               <div className="py-12 text-center bg-[#F5F3F2]">
-                <p className="text-lg text-foreground/70 font-medium">No tables available in the Food Court Main Hall for this time slot.</p>
+                <p className="text-lg text-foreground/70 font-medium">No tables available on the Main Floor for this time slot.</p>
                 <Button variant="outline" className="mt-4 rounded-none" onClick={() => setStep(1)}>Change Time</Button>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between flex-wrap gap-3">
-                  <p className="text-sm font-bold uppercase tracking-wide text-foreground/60">Food Court Main Hall</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-foreground/60">Main Floor &bull; drag to pan, scroll to zoom</p>
                   <div className="flex items-center gap-4 text-[13px] font-medium text-foreground/70">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-white border border-primary" /> Available</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-primary/10 border border-primary" /> Available</span>
                     <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-sm bg-primary" /> Selected</span>
                   </div>
                 </div>
 
                 <div className="border border-muted p-2 sm:p-4">
-                  <FloorMap tables={tables} selectedTables={selectedTables} onToggle={handleToggleTable} />
+                  {floor && <FloorMap tables={tables} selectedTables={selectedTables} onToggle={handleToggleTable} floor={floor} />}
                 </div>
 
                 {/* Selection summary + capacity feedback */}

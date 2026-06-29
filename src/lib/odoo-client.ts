@@ -4,22 +4,22 @@ import xmlrpc from 'xmlrpc';
 // Mirrors the native Odoo `restaurant.table` shape: `table_number` is the
 // label, `floor_id` is a [id, name] pair, and position_h/position_v/width/
 // height/shape are the POS floor-plan layout fields used to draw the map.
-// A couple of "Outdoor Terrace" tables are included so the Main Hall filter
-// in /api/tables can be verified against mock data too.
+// A couple of "Outdoor Terrace" tables are included so the bookable-floor
+// filter (Main Floor) in /api/tables can be verified against mock data too.
 const MOCK_TABLES = [
-  { id: 1, table_number: 'A1', floor_id: [1, 'Food Court Main Hall'], seats: 2, position_h: 60, position_v: 60, width: 100, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 2, table_number: 'A2', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 210, position_v: 60, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 3, table_number: 'A3', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 380, position_v: 60, width: 100, height: 100, shape: 'round', color: '', state: 'available', active: true },
-  { id: 4, table_number: 'A4', floor_id: [1, 'Food Court Main Hall'], seats: 6, position_h: 540, position_v: 60, width: 160, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 5, table_number: 'A5', floor_id: [1, 'Food Court Main Hall'], seats: 2, position_h: 740, position_v: 60, width: 90, height: 90, shape: 'round', color: '', state: 'available', active: true },
-  { id: 6, table_number: 'B1', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 60, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 7, table_number: 'B2', floor_id: [1, 'Food Court Main Hall'], seats: 8, position_h: 300, position_v: 240, width: 180, height: 120, shape: 'round', color: '', state: 'available', active: true },
-  { id: 8, table_number: 'B3', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 560, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
-  { id: 9, table_number: 'C1', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 60, position_v: 430, width: 100, height: 100, shape: 'round', color: '', state: 'available', active: true },
-  { id: 10, table_number: 'C2', floor_id: [1, 'Food Court Main Hall'], seats: 2, position_h: 220, position_v: 430, width: 90, height: 90, shape: 'square', color: '', state: 'available', active: true },
-  { id: 11, table_number: 'C3', floor_id: [1, 'Food Court Main Hall'], seats: 10, position_h: 380, position_v: 430, width: 220, height: 110, shape: 'square', color: '', state: 'available', active: true },
-  { id: 12, table_number: 'C4', floor_id: [1, 'Food Court Main Hall'], seats: 4, position_h: 660, position_v: 430, width: 110, height: 100, shape: 'round', color: '', state: 'available', active: true },
-  // Outdoor Terrace — should be filtered OUT by the Main Hall filter.
+  { id: 1, table_number: 'A1', floor_id: [1, 'Main Floor'], seats: 2, position_h: 60, position_v: 60, width: 100, height: 100, shape: 'square', color: '', state: 'available', active: true },
+  { id: 2, table_number: 'A2', floor_id: [1, 'Main Floor'], seats: 4, position_h: 210, position_v: 60, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
+  { id: 3, table_number: 'A3', floor_id: [1, 'Main Floor'], seats: 4, position_h: 380, position_v: 60, width: 100, height: 100, shape: 'round', color: '', state: 'available', active: true },
+  { id: 4, table_number: 'A4', floor_id: [1, 'Main Floor'], seats: 6, position_h: 540, position_v: 60, width: 160, height: 100, shape: 'square', color: '', state: 'available', active: true },
+  { id: 5, table_number: 'A5', floor_id: [1, 'Main Floor'], seats: 2, position_h: 740, position_v: 60, width: 90, height: 90, shape: 'round', color: '', state: 'available', active: true },
+  { id: 6, table_number: 'B1', floor_id: [1, 'Main Floor'], seats: 4, position_h: 60, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
+  { id: 7, table_number: 'B2', floor_id: [1, 'Main Floor'], seats: 8, position_h: 300, position_v: 240, width: 180, height: 120, shape: 'round', color: '', state: 'available', active: true },
+  { id: 8, table_number: 'B3', floor_id: [1, 'Main Floor'], seats: 4, position_h: 560, position_v: 250, width: 120, height: 100, shape: 'square', color: '', state: 'available', active: true },
+  { id: 9, table_number: 'C1', floor_id: [1, 'Main Floor'], seats: 4, position_h: 60, position_v: 430, width: 100, height: 100, shape: 'round', color: '', state: 'available', active: true },
+  { id: 10, table_number: 'C2', floor_id: [1, 'Main Floor'], seats: 2, position_h: 220, position_v: 430, width: 90, height: 90, shape: 'square', color: '', state: 'available', active: true },
+  { id: 11, table_number: 'C3', floor_id: [1, 'Main Floor'], seats: 10, position_h: 380, position_v: 430, width: 220, height: 110, shape: 'square', color: '', state: 'available', active: true },
+  { id: 12, table_number: 'C4', floor_id: [1, 'Main Floor'], seats: 4, position_h: 660, position_v: 430, width: 110, height: 100, shape: 'round', color: '', state: 'available', active: true },
+  // Outdoor Terrace — should be filtered OUT by the bookable-floor filter.
   { id: 13, table_number: 'T1', floor_id: [2, 'Outdoor Terrace'], seats: 2, position_h: 60, position_v: 60, width: 90, height: 90, shape: 'round', color: '', state: 'available', active: true },
   { id: 14, table_number: 'T2', floor_id: [2, 'Outdoor Terrace'], seats: 6, position_h: 200, position_v: 60, width: 160, height: 100, shape: 'square', color: '', state: 'available', active: true },
 ];

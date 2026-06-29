@@ -61,7 +61,7 @@ export function Navbar() {
     <nav className={`bg-white sticky top-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-sally' : 'border-b border-muted'}`}>
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
-          <Image src="/logo.svg" alt="CocoFoodCourt Logo" width={44} height={44} className="object-contain" />
+          <Image src="/logo.svg" alt="CocoFoodCourt Logo" width={44} height={44} className="object-contain" style={{ width: "44px", height: "auto" }} />
           <span className="text-2xl font-bold font-serif text-foreground tracking-tight group-hover:text-primary transition-colors">
             CocoFoodCourt
           </span>

@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { odooClient } from '@/lib/odoo-client';
 
-// Only this floor is bookable through the web app for now.
-const MAIN_HALL_FLOOR = 'Food Court Main Hall';
+// Only this floor is bookable through the web app for now. This is the real,
+// laid-out food court floor in Odoo (tables have proper POS coordinates and a
+// floor background image). Other floors like "Food Court Main Hall" are leftover
+// dummy/seed data with default (10,10) positions and must not be shown.
+const BOOKABLE_FLOOR = 'Main Floor';
 
 interface RawOdooTable {
   id: number;
@@ -50,12 +53,12 @@ export async function GET(request: Request) {
     const reservedTableIds = (overlapping as { table_ids?: number[] }[])
       .flatMap((res) => res.table_ids || []);
 
-    // 3. Build domain for available tables (Main Hall only)
+    // 3. Build domain for available tables (bookable floor only)
     type DomainLeaf = [string, string, unknown];
     const domain: DomainLeaf[] = [
       ['state', '=', 'available'],
       ['active', '=', true],
-      ['floor_id.name', '=', MAIN_HALL_FLOOR]
+      ['floor_id.name', '=', BOOKABLE_FLOOR]
     ];
     if (reservedTableIds.length > 0) {
       domain.push(['id', 'not in', reservedTableIds]);
@@ -85,8 +88,8 @@ export async function GET(request: Request) {
         shape: t.shape || 'square',
       }))
       // Safety net: the mock client ignores the Odoo domain, so enforce the
-      // Main Hall filter here too. On real Odoo this is already a no-op.
-      .filter((t) => t.floor_name === MAIN_HALL_FLOOR);
+      // bookable-floor filter here too. On real Odoo this is already a no-op.
+      .filter((t) => t.floor_name === BOOKABLE_FLOOR);
 
     return NextResponse.json(tables);
   } catch (error) {
