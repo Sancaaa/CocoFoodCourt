@@ -54,22 +54,27 @@ function chairPositions(t: FloorTable) {
 }
 
 export default function FloorMap({ tables, selectedTables, onToggle }: FloorMapProps) {
-  // If Odoo never assigned floor-plan coordinates, lay tables out on a grid
-  // so the map still works instead of stacking everything at (0,0).
+  // Use Odoo's floor-plan coordinates only when they're actually meaningful.
+  // If tables share the same spot (Odoo default 10,10 when a venue hasn't
+  // arranged its floor) they'd all stack on top of each other — so fall back
+  // to a clean grid whenever the coordinates aren't all distinct.
   const positioned = useMemo<FloorTable[]>(() => {
-    const hasLayout = tables.some((t) => t.position_h || t.position_v);
+    const distinct = new Set(tables.map((t) => `${t.position_h},${t.position_v}`)).size;
+    const hasLayout = tables.length > 1 && distinct === tables.length && tables.some((t) => t.position_h || t.position_v);
     if (hasLayout) return tables;
+
+    const cols = Math.min(FALLBACK_COLS, Math.max(1, Math.ceil(Math.sqrt(tables.length))));
     return tables.map((t, i) => ({
       ...t,
-      width: t.width || 120,
-      height: t.height || 100,
-      position_h: 40 + (i % FALLBACK_COLS) * 180,
-      position_v: 40 + Math.floor(i / FALLBACK_COLS) * 180,
+      width: 150,
+      height: 115,
+      position_h: 40 + (i % cols) * 210,
+      position_v: 40 + Math.floor(i / cols) * 210,
     }));
   }, [tables]);
 
-  const viewBox = useMemo(() => {
-    if (positioned.length === 0) return "0 0 800 400";
+  const bounds = useMemo(() => {
+    if (positioned.length === 0) return { x: 0, y: 0, w: 800, h: 400 };
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const t of positioned) {
       minX = Math.min(minX, t.position_h);
@@ -78,18 +83,28 @@ export default function FloorMap({ tables, selectedTables, onToggle }: FloorMapP
       maxY = Math.max(maxY, t.position_v + t.height);
     }
     const pad = CHAIR_MARGIN + 16;
-    return `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`;
+    return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
   }, [positioned]);
 
   if (positioned.length === 0) return null;
 
   return (
     <svg
-      viewBox={viewBox}
+      viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
       className="w-full h-auto select-none rounded-lg bg-[#F5F3F2]"
       role="group"
       aria-label="Floor map. Select a table."
     >
+      {/* Floor-plan backdrop (decorative) so the map reads as a real venue. */}
+      <image
+        href="/floorplan.png"
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.w}
+        height={bounds.h}
+        preserveAspectRatio="xMidYMid slice"
+        opacity={0.18}
+      />
       {positioned.map((t) => {
         const selected = selectedTables.includes(t.id);
         const cx = t.position_h + t.width / 2;

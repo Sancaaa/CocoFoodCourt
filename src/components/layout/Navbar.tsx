@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 export function Navbar() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
   // The httpOnly `session` cookie (via /api/auth/session) is the single
@@ -21,7 +20,6 @@ export function Navbar() {
         const data = await res.json();
         if (data && data.user) {
           setIsLoggedIn(true);
-          setUserName(data.user.name);
           return;
         }
       }
@@ -29,7 +27,6 @@ export function Navbar() {
       console.error('Navbar session check error:', e);
     }
     setIsLoggedIn(false);
-    setUserName('');
   };
 
   useEffect(() => {
@@ -56,7 +53,6 @@ export function Navbar() {
       console.error('Logout request error:', e);
     }
     setIsLoggedIn(false);
-    setUserName('');
     window.dispatchEvent(new Event("auth-change"));
     router.push("/");
   };
@@ -71,17 +67,8 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-[13px] uppercase tracking-wide font-bold hover:text-primary transition-colors">
-            Home
-          </Link>
-          
           {isLoggedIn ? (
             <>
-              {userName && (
-                <span className="text-[13px] font-bold text-foreground/80" id="navbar-user-name">
-                  Hi, {userName}
-                </span>
-              )}
               <Link href="/dashboard" className="text-[13px] uppercase tracking-wide font-bold hover:text-primary transition-colors">
                 My History
               </Link>
