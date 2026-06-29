@@ -12,6 +12,8 @@ export function Navbar() {
   const [userName, setUserName] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
+  // The httpOnly `session` cookie (via /api/auth/session) is the single
+  // source of truth for auth state — no localStorage fallback.
   const checkLogin = async () => {
     try {
       const res = await fetch('/api/auth/session');
@@ -26,29 +28,23 @@ export function Navbar() {
     } catch (e) {
       console.error('Navbar session check error:', e);
     }
-    // Fallback to local storage
-    const localLoggedIn = localStorage.getItem("userLoggedIn") === "true";
-    setIsLoggedIn(localLoggedIn);
-    if (!localLoggedIn) {
-      setUserName('');
-    } else {
-      setUserName('User');
-    }
+    setIsLoggedIn(false);
+    setUserName('');
   };
 
   useEffect(() => {
-    setTimeout(() => {
-      checkLogin();
-    }, 0);
-    window.addEventListener("storage", checkLogin);
-    
+    // Deferred so the async session check doesn't setState within the effect body.
+    setTimeout(() => { checkLogin(); }, 0);
+    // Login/logout dispatch "auth-change" so the navbar refreshes immediately.
+    window.addEventListener("auth-change", checkLogin);
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
     window.addEventListener("scroll", handleScroll);
 
     return () => {
-      window.removeEventListener("storage", checkLogin);
+      window.removeEventListener("auth-change", checkLogin);
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
@@ -59,10 +55,9 @@ export function Navbar() {
     } catch (e) {
       console.error('Logout request error:', e);
     }
-    localStorage.removeItem("userLoggedIn");
     setIsLoggedIn(false);
     setUserName('');
-    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("auth-change"));
     router.push("/");
   };
 
@@ -70,7 +65,7 @@ export function Navbar() {
     <nav className={`bg-white sticky top-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-sally' : 'border-b border-muted'}`}>
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
-          <Image src="/logo.png" alt="CocoFoodCourt Logo" width={40} height={40} className="object-contain" />
+          <Image src="/logo.svg" alt="CocoFoodCourt Logo" width={44} height={44} className="object-contain" />
           <span className="text-2xl font-bold font-serif text-foreground tracking-tight group-hover:text-primary transition-colors">
             CocoFoodCourt
           </span>

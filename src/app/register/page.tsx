@@ -18,6 +18,12 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Preserve a ?redirect=... target (e.g. /book) through to login.
+  const getRedirect = () => {
+    const param = new URLSearchParams(window.location.search).get("redirect");
+    return param && param.startsWith("/") ? param : "";
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -49,8 +55,9 @@ export default function RegisterPage() {
 
       if (res.ok) {
         setSuccess("Registration successful! Redirecting to login...");
+        const redirect = getRedirect();
         setTimeout(() => {
-          router.push("/login?registered=true");
+          router.push(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login?registered=true");
         }, 1500);
       } else {
         setError(data.error || "Registration failed");

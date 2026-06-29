@@ -15,6 +15,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Honor ?redirect=... so guests sent here mid-booking return to /book.
+  const getRedirect = () => {
+    const param = new URLSearchParams(window.location.search).get("redirect");
+    return param && param.startsWith("/") ? param : "/dashboard";
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -30,11 +36,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Simulate successful login localState too
-        localStorage.setItem("userLoggedIn", "true");
-        // Trigger storage event so other components (Navbar) update immediately
-        window.dispatchEvent(new Event("storage")); 
-        router.push("/dashboard");
+        // Notify other components (e.g. Navbar) to re-check the session cookie.
+        window.dispatchEvent(new Event("auth-change"));
+        router.push(getRedirect());
       } else {
         setError(data.error || "Invalid credentials");
       }
