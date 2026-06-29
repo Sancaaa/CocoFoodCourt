@@ -12,7 +12,6 @@ interface RawOdooTable {
   table_number: string;
   floor_id: [number, string] | false;
   seats: number;
-  state?: string;
   position_h?: number;
   position_v?: number;
   width?: number;
@@ -64,26 +63,28 @@ export async function GET(request: Request) {
       ['floor_id.name', '=', BOOKABLE_FLOOR]
     ];
 
-    // 4. Include the POS floor-plan layout fields + `state` so the frontend can
-    //    draw a real map and mark which tables are bookable.
+    // 4. Include the POS floor-plan layout fields so the frontend can draw a
+    //    real map. We do NOT read the table's persistent `state` field: that is
+    //    a global flag (Odoo flips it to `reserved` once any booking exists) and
+    //    is not specific to the requested date/time. Per-slot availability comes
+    //    solely from the overlapping-reservation check below.
     const rawTables: RawOdooTable[] = await odooClient.executeKw(
       'restaurant.table',
       'search_read',
       [domain],
-      { fields: ['id', 'table_number', 'floor_id', 'seats', 'state', 'position_h', 'position_v', 'width', 'height', 'shape'] }
+      { fields: ['id', 'table_number', 'floor_id', 'seats', 'position_h', 'position_v', 'width', 'height', 'shape'] }
     );
 
     // 5. Format to match frontend expectations. We intentionally drop Odoo's
-    //    `color` and re-style on the web for a consistent look. A table is
-    //    bookable only when its own state is `available` AND it isn't held by an
-    //    overlapping reservation for this slot.
+    //    `color` and re-style on the web. A table is bookable for THIS date/time
+    //    when it isn't held by an overlapping reservation.
     const tables = rawTables
       .map((t) => ({
         id: t.id,
         name: t.table_number,
         seats: t.seats,
         floor_name: Array.isArray(t.floor_id) && t.floor_id.length > 1 ? t.floor_id[1] : 'Unknown Floor',
-        available: (t.state ?? 'available') === 'available' && !reservedSet.has(t.id),
+        available: !reservedSet.has(t.id),
         position_h: t.position_h ?? 0,
         position_v: t.position_v ?? 0,
         width: t.width ?? 0,
