@@ -54,9 +54,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, reservationId, paymentUrl: mockPaymentUrl });
     } else {
       // No food ordered, auto confirm reservation since no payment is needed
-      await odooClient.executeKw('foodcourt.reservation', 'action_confirm', [
-        [reservationId]
-      ]);
+      try {
+        await odooClient.executeKw('foodcourt.reservation', 'action_confirm', [
+          [reservationId]
+        ]);
+      } catch (confirmErr: any) {
+        // Ignore XML-RPC marshal None error because the method actually succeeds
+        if (confirmErr?.faultString?.includes('cannot marshal None')) {
+          console.warn('Ignored XML-RPC None marshal error on action_confirm');
+        } else {
+          throw confirmErr;
+        }
+      }
       return NextResponse.json({ success: true, reservationId });
     }
   } catch (error) {
