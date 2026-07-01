@@ -36,18 +36,18 @@ const MUTED = "#9aa0a6"; // unavailable / reserved tables
 
 type TableState = "available" | "selected" | "unavailable";
 
-// Translucent fills so the Odoo floor image stays visible; selected is more
-// saturated, unavailable is greyed out.
+// Semi-opaque fills with a solid border so tables read clearly over the busy
+// floor image; selected is strongest, unavailable is greyed out and dashed.
 const styles: Record<TableState, L.PathOptions> = {
-  selected: { color: PRIMARY, weight: 3, fillColor: PRIMARY, fillOpacity: 0.55 },
-  available: { color: PRIMARY, weight: 2, fillColor: PRIMARY, fillOpacity: 0.15 },
-  unavailable: { color: MUTED, weight: 2, fillColor: MUTED, fillOpacity: 0.35, dashArray: "3 3" },
+  selected: { color: "#7d2f18", weight: 3, fillColor: PRIMARY, fillOpacity: 0.85, opacity: 1 },
+  available: { color: PRIMARY, weight: 3, fillColor: "#ffffff", fillOpacity: 0.78, opacity: 1 },
+  unavailable: { color: MUTED, weight: 2, fillColor: MUTED, fillOpacity: 0.5, opacity: 0.9, dashArray: "4 3" },
 };
 
 const labelColor: Record<TableState, string> = {
   selected: "#ffffff",
   available: PRIMARY,
-  unavailable: MUTED,
+  unavailable: "#4b5563",
 };
 
 // Centered table-number label; its colour reflects the table state.

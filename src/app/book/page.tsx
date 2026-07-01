@@ -276,36 +276,35 @@ export default function BookPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-[13px] uppercase tracking-wide font-bold">Arrival Time</Label>
-              <div className="flex flex-wrap gap-2">
-                {timeSlots.slice(0, 15).map((t) => (
-                  <button
-                    key={t.value}
-                    onClick={() => setTimeStart(t.value)}
-                    className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 ${timeStart === t.value ? 'bg-primary text-white' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+            <div className="grid gap-8 sm:grid-cols-2">
+              <div className="space-y-3">
+                <Label htmlFor="arrival" className="text-[13px] uppercase tracking-wide font-bold">Arrival Time</Label>
+                <select
+                  id="arrival"
+                  value={timeStart ?? ""}
+                  onChange={e => {
+                    const v = e.target.value === "" ? null : parseFloat(e.target.value);
+                    setTimeStart(v);
+                    if (v !== null && timeEnd !== null && timeEnd <= v) setTimeEnd(null);
+                  }}
+                  className="w-full h-12 rounded-none border-2 border-muted bg-white px-3 text-sm font-medium focus-visible:outline-none focus-visible:border-primary transition-colors"
+                >
+                  <option value="" disabled>Select arrival time</option>
+                  {timeSlots.slice(0, -1).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
               </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-[13px] uppercase tracking-wide font-bold">Departure Time</Label>
-              <div className="flex flex-wrap gap-2">
-                {timeSlots.slice(2).map((t) => (
-                  <button
-                    key={t.value}
-                    disabled={timeStart !== null && t.value <= timeStart}
-                    onClick={() => setTimeEnd(t.value)}
-                    className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 
-                      ${timeEnd === t.value ? 'bg-primary text-white' : 
-                        timeStart !== null && t.value <= timeStart ? 'bg-muted/30 text-muted-foreground/40 cursor-not-allowed' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+              <div className="space-y-3">
+                <Label htmlFor="departure" className="text-[13px] uppercase tracking-wide font-bold">Departure Time</Label>
+                <select
+                  id="departure"
+                  value={timeEnd ?? ""}
+                  disabled={timeStart === null}
+                  onChange={e => setTimeEnd(e.target.value === "" ? null : parseFloat(e.target.value))}
+                  className="w-full h-12 rounded-none border-2 border-muted bg-white px-3 text-sm font-medium focus-visible:outline-none focus-visible:border-primary transition-colors disabled:bg-muted/20 disabled:text-muted-foreground disabled:cursor-not-allowed"
+                >
+                  <option value="" disabled>{timeStart === null ? "Pick arrival first" : "Select departure time"}</option>
+                  {timeSlots.filter(t => timeStart !== null && t.value > timeStart).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
               </div>
             </div>
           </div>
@@ -352,28 +351,28 @@ export default function BookPage() {
 
         {step === 3 && (
           <div className="space-y-6">
-            {/* Menu filters: search by name + category chips */}
-            <div className="space-y-4">
-              <Input
-                type="search"
-                value={menuSearch}
-                onChange={e => setMenuSearch(e.target.value)}
-                placeholder="Search menu…"
-                className="h-12 rounded-none border-2 border-muted focus-visible:ring-0 focus-visible:border-primary transition-colors"
-              />
-              {menuTenants.length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {menuTenants.map(tenant => (
-                    <button
-                      key={tenant}
-                      onClick={() => setMenuTenant(tenant)}
-                      className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 ${menuTenant === tenant ? 'bg-primary text-white' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
-                    >
-                      {tenant}
-                    </button>
+            {/* Menu filters: search by name + tenant dropdown */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  type="search"
+                  value={menuSearch}
+                  onChange={e => setMenuSearch(e.target.value)}
+                  placeholder="Search menu…"
+                  className="h-12 flex-1 rounded-none border-2 border-muted focus-visible:ring-0 focus-visible:border-primary transition-colors"
+                />
+                <select
+                  value={menuTenant}
+                  onChange={e => setMenuTenant(e.target.value)}
+                  aria-label="Filter by tenant"
+                  className="h-12 sm:w-64 rounded-none border-2 border-muted bg-white px-3 text-sm font-medium focus-visible:outline-none focus-visible:border-primary transition-colors"
+                >
+                  <option value="All">All tenants</option>
+                  {menuTenants.filter(t => t !== "All").map(tenant => (
+                    <option key={tenant} value={tenant}>{tenant}</option>
                   ))}
-                </div>
-              )}
+                </select>
+              </div>
               <p className="text-[13px] text-foreground/50">{filteredMenu.length} of {menu.length} items</p>
             </div>
 
