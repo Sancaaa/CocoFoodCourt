@@ -41,14 +41,14 @@ export default function BookPage() {
     id: number;
     name: string;
     list_price: number;
-    categories: string[];
+    tenant: string;
   }
 
   const [tables, setTables] = useState<FloorTable[]>([]);
   const [floor, setFloor] = useState<FloorMeta | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [menuSearch, setMenuSearch] = useState("");
-  const [menuCategory, setMenuCategory] = useState("All");
+  const [menuTenant, setMenuTenant] = useState("All");
 
   useEffect(() => {
     // 1. Fetch menu
@@ -215,10 +215,10 @@ export default function BookPage() {
 
   const getPreorderQty = (id: number) => preorders.find(p => p.product_id === id)?.quantity || 0;
 
-  // Menu filtering (category + name search)
-  const menuCategories = ["All", ...Array.from(new Set(menu.flatMap(m => m.categories))).sort()];
+  // Menu filtering (tenant + name search)
+  const menuTenants = ["All", ...Array.from(new Set(menu.map(m => m.tenant))).sort()];
   const filteredMenu = menu.filter(m =>
-    (menuCategory === "All" || m.categories.includes(menuCategory)) &&
+    (menuTenant === "All" || m.tenant === menuTenant) &&
     (menuSearch.trim() === "" || m.name.toLowerCase().includes(menuSearch.trim().toLowerCase()))
   );
 
@@ -361,15 +361,15 @@ export default function BookPage() {
                 placeholder="Search menu…"
                 className="h-12 rounded-none border-2 border-muted focus-visible:ring-0 focus-visible:border-primary transition-colors"
               />
-              {menuCategories.length > 1 && (
+              {menuTenants.length > 1 && (
                 <div className="flex flex-wrap gap-2">
-                  {menuCategories.map(cat => (
+                  {menuTenants.map(tenant => (
                     <button
-                      key={cat}
-                      onClick={() => setMenuCategory(cat)}
-                      className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 ${menuCategory === cat ? 'bg-primary text-white' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
+                      key={tenant}
+                      onClick={() => setMenuTenant(tenant)}
+                      className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 ${menuTenant === tenant ? 'bg-primary text-white' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
                     >
-                      {cat}
+                      {tenant}
                     </button>
                   ))}
                 </div>
@@ -380,7 +380,7 @@ export default function BookPage() {
             {filteredMenu.length === 0 ? (
               <div className="py-12 text-center bg-[#F5F3F2]">
                 <p className="text-foreground/70 font-medium">No menu items match your filter.</p>
-                <Button variant="outline" className="mt-4 rounded-none" onClick={() => { setMenuSearch(""); setMenuCategory("All"); }}>Clear filters</Button>
+                <Button variant="outline" className="mt-4 rounded-none" onClick={() => { setMenuSearch(""); setMenuTenant("All"); }}>Clear filters</Button>
               </div>
             ) : (
               <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -390,7 +390,7 @@ export default function BookPage() {
                       <Image src="/food.png" alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
                     <div className="p-5 flex flex-col flex-1">
-                      <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">{item.categories[0] || "Available"}</span>
+                      <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">{item.tenant}</span>
                       <h4 className="font-serif font-bold text-lg leading-snug mb-1 group-hover:text-primary transition-colors">{item.name}</h4>
                       <p className="text-foreground/70 text-sm mb-4 flex-1">Rp {item.list_price.toLocaleString()}</p>
 

@@ -25,17 +25,10 @@ const MOCK_TABLES = [
 ];
 
 const MOCK_MENU = [
-  { id: 101, name: 'Nasi Goreng Spesial', list_price: 35000, pos_categ_ids: [1, 3] },
-  { id: 102, name: 'Mie Ayam Bakso', list_price: 25000, pos_categ_ids: [1] },
-  { id: 103, name: 'Es Teh Manis', list_price: 8000, pos_categ_ids: [2] },
-  { id: 104, name: 'Kopi Susu Gula Aren', list_price: 18000, pos_categ_ids: [2, 4] },
-];
-
-const MOCK_POS_CATEGORIES = [
-  { id: 1, name: 'Main Course' },
-  { id: 2, name: 'Beverages' },
-  { id: 3, name: 'Spicy' },
-  { id: 4, name: 'Coffee' },
+  { id: 101, name: 'Nasi Goreng Spesial', list_price: 35000, tenant_id: [1, 'Warung Nusantara'] },
+  { id: 102, name: 'Mie Ayam Bakso', list_price: 25000, tenant_id: [1, 'Warung Nusantara'] },
+  { id: 103, name: 'Es Teh Manis', list_price: 8000, tenant_id: [2, 'Kopi Corner'] },
+  { id: 104, name: 'Kopi Susu Gula Aren', list_price: 18000, tenant_id: [2, 'Kopi Corner'] },
 ];
 
 export class OdooClient {
@@ -120,9 +113,6 @@ export class OdooClient {
       }
       if (model === 'product.product' && method === 'search_read') {
         return MOCK_MENU;
-      }
-      if (model === 'pos.category' && method === 'search_read') {
-        return MOCK_POS_CATEGORIES;
       }
       if (model === 'foodcourt.reservation' && method === 'create') {
         return Math.floor(Math.random() * 1000) + 1; // Return mock reservation ID
