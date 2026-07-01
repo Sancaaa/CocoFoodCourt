@@ -41,11 +41,14 @@ export default function BookPage() {
     id: number;
     name: string;
     list_price: number;
+    categories: string[];
   }
 
   const [tables, setTables] = useState<FloorTable[]>([]);
   const [floor, setFloor] = useState<FloorMeta | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [menuSearch, setMenuSearch] = useState("");
+  const [menuCategory, setMenuCategory] = useState("All");
 
   useEffect(() => {
     // 1. Fetch menu
@@ -212,6 +215,13 @@ export default function BookPage() {
 
   const getPreorderQty = (id: number) => preorders.find(p => p.product_id === id)?.quantity || 0;
 
+  // Menu filtering (category + name search)
+  const menuCategories = ["All", ...Array.from(new Set(menu.flatMap(m => m.categories))).sort()];
+  const filteredMenu = menu.filter(m =>
+    (menuCategory === "All" || m.categories.includes(menuCategory)) &&
+    (menuSearch.trim() === "" || m.name.toLowerCase().includes(menuSearch.trim().toLowerCase()))
+  );
+
   // Selected tables / capacity helpers
   const selectedTableObjs = tables.filter(t => selectedTables.includes(t.id));
   const selectedSeats = selectedTableObjs.reduce((sum, t) => sum + t.seats, 0);
@@ -342,26 +352,58 @@ export default function BookPage() {
 
         {step === 3 && (
           <div className="space-y-6">
-            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {menu.map(item => (
-                <div key={item.id} className="bg-[#F5F3F2] flex flex-col group relative overflow-hidden">
-                  <div className="relative w-full aspect-[2/3] bg-muted overflow-hidden">
-                    <Image src="/food.png" alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                  </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">Available</span>
-                    <h4 className="font-serif font-bold text-lg leading-snug mb-1 group-hover:text-primary transition-colors">{item.name}</h4>
-                    <p className="text-foreground/70 text-sm mb-4 flex-1">Rp {item.list_price.toLocaleString()}</p>
-                    
-                    <div className="flex items-center justify-between border-t border-muted/50 pt-4 mt-auto">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, -1)}>-</Button>
-                      <span className="font-bold text-lg">{getPreorderQty(item.id)}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, 1)}>+</Button>
+            {/* Menu filters: search by name + category chips */}
+            <div className="space-y-4">
+              <Input
+                type="search"
+                value={menuSearch}
+                onChange={e => setMenuSearch(e.target.value)}
+                placeholder="Search menu…"
+                className="h-12 rounded-none border-2 border-muted focus-visible:ring-0 focus-visible:border-primary transition-colors"
+              />
+              {menuCategories.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {menuCategories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setMenuCategory(cat)}
+                      className={`px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 ${menuCategory === cat ? 'bg-primary text-white' : 'bg-[#F5F3F2] hover:bg-muted text-foreground'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-[13px] text-foreground/50">{filteredMenu.length} of {menu.length} items</p>
+            </div>
+
+            {filteredMenu.length === 0 ? (
+              <div className="py-12 text-center bg-[#F5F3F2]">
+                <p className="text-foreground/70 font-medium">No menu items match your filter.</p>
+                <Button variant="outline" className="mt-4 rounded-none" onClick={() => { setMenuSearch(""); setMenuCategory("All"); }}>Clear filters</Button>
+              </div>
+            ) : (
+              <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {filteredMenu.map(item => (
+                  <div key={item.id} className="bg-[#F5F3F2] flex flex-col group relative overflow-hidden">
+                    <div className="relative w-full aspect-[2/3] bg-muted overflow-hidden">
+                      <Image src="/food.png" alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <span className="text-[11px] uppercase tracking-wider font-bold text-primary mb-2 block">{item.categories[0] || "Available"}</span>
+                      <h4 className="font-serif font-bold text-lg leading-snug mb-1 group-hover:text-primary transition-colors">{item.name}</h4>
+                      <p className="text-foreground/70 text-sm mb-4 flex-1">Rp {item.list_price.toLocaleString()}</p>
+
+                      <div className="flex items-center justify-between border-t border-muted/50 pt-4 mt-auto">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, -1)}>-</Button>
+                        <span className="font-bold text-lg">{getPreorderQty(item.id)}</span>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white" onClick={() => handleUpdatePreorder(item.id, 1)}>+</Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {preorders.length > 0 && (
               <div className="p-4 bg-primary/5 text-primary text-right font-bold text-lg border border-primary/10">
                 Total Price: Rp <span id="preorder-total">{calculateTotal().toLocaleString()}</span>
