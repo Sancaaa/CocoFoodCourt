@@ -34,15 +34,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Find overlapping reservations. `draft` is included so a table that
-    //    someone is mid-checkout on (created, awaiting payment) is held and
-    //    cannot be double-booked during the payment window.
+    // 1. Find overlapping reservations. `pending_payment` is included so a
+    //    table someone is mid-checkout on (created, awaiting Midtrans payment)
+    //    is held and cannot be double-booked during the 15-minute payment window.
     const overlapping = await odooClient.executeKw(
       'foodcourt.reservation',
       'search_read',
       [[
         ['reservation_date', '=', date],
-        ['state', 'in', ['draft', 'confirmed', 'checked_in']],
+        ['state', 'in', ['pending_payment', 'confirmed', 'checked_in']],
         ['time_start', '<', parseFloat(timeEnd)],
         ['time_end', '>', parseFloat(timeStart)]
       ]],

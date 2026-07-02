@@ -199,7 +199,8 @@ export default function BookPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         if (data.paymentUrl) {
-          router.push(data.paymentUrl);
+          // Midtrans Snap is an external URL — full navigation, not client routing.
+          window.location.href = data.paymentUrl;
         } else {
           router.push("/dashboard");
         }
