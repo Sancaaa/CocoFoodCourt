@@ -105,8 +105,9 @@ export class OdooClient {
       }
       if (model === 'foodcourt.reservation' && method === 'search_read') {
         // Pretend table 7 is held by an overlapping reservation so dev mode
-        // exercises the "unavailable" styling on the map.
-        return [{ table_ids: [7] }];
+        // exercises the "unavailable" styling on the map. Extra fields let the
+        // dashboard/cancel flow work against mock data too.
+        return [{ id: 1, table_ids: [7], customer_id: [1, 'Mock User'], state: 'confirmed' }];
       }
       if (model === 'foodcourt.reservation' && method === 'get_available_tables_api') {
         return MOCK_TABLES;
@@ -122,6 +123,10 @@ export class OdooClient {
       }
       if (model === 'foodcourt.reservation' && method === 'action_confirm') {
         console.log(`[Mock Odoo] Confirmed reservation IDs:`, args[0]);
+        return true;
+      }
+      if (model === 'foodcourt.reservation' && method === 'action_cancel') {
+        console.log(`[Mock Odoo] Cancelled reservation IDs:`, args[0]);
         return true;
       }
       if (model === 'foodcourt.reservation' && method === 'write') {
